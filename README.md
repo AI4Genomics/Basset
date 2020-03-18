@@ -10,4 +10,4 @@ Based on the paper and the original implementation in lua language ([GitHub page
 
 <br/>
 
-_**The project is under completion at this moment!**_
+_**This project is currently undergoing completion!**_
