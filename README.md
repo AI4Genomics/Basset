@@ -7,3 +7,5 @@ Based on the paper and the original implementation in lua language ([GitHub page
 
 1. Train deep convolutional neural networks to learn highly accurate models of DNA sequence activity such as accessibility (via DNaseI-seq or ATAC-seq), protein binding (via ChIP-seq), and chromatin state.
 2. Interpret the principles learned by the model.
+
+The project is under completion at this moment.
