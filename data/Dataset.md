@@ -4,4 +4,4 @@ The **DSB hotspots** dataset can be downloaded from the **_Data file S1_** of th
 
 The **ENCODE** dataset can be downloaded [here](https://www.dropbox.com/s/8g3kc0ai9ir5d15/encode_roadmap_act.txt.gz).
 
-The **GRCh37/hg19 Human Genome** can be downloaded [here](ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFa.tar.gz).
+The **GRCh37/hg19 Human Genome** can be downloaded by copy-paste this link into your browser: _ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/chromFa.tar.gz_.
