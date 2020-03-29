@@ -9,9 +9,11 @@ import sys
 import h5py
 import numpy as np
 
+
 ################################################################################
 # preprocess_features.py
-#
+# Goal: merge all of the BED files into one BED and an activity table
+
 # Preprocess a set of feature BED files for Basset analysis, potentially adding
 # them to an existing database of features, specified as a BED file with the
 # target activities comma-separated in column 4 and a full activity table file.
@@ -21,58 +23,74 @@ import numpy as np
 # main
 ################################################################################
 def main():
-    usage = 'usage: %prog [options] <target_beds_file>'
-    parser = OptionParser(usage)
+    usage = 'usage: %prog [options] <target_beds_file>'  # this is how you use the "options/arguments"
+    # in the command line, it'll be:
+    # preprocess_features.py -a -b -c ..... filesHerePath
+    parser = OptionParser(usage)  # create args for command line
     parser.add_option('-a', dest='db_act_file', default=None, help='Existing database activity table.')
     parser.add_option('-b', dest='db_bed', default=None, help='Existing database BED file.')
     parser.add_option('-c', dest='chrom_lengths_file', help='Table of chromosome lengths')
-    parser.add_option('-i', dest='ignore_auxiliary', default=False, action='store_true', help='Ignore auxiliary chromosomes that don\'t match "chr\d+ or chrX" [Default: %default]')
-    parser.add_option('-m', dest='merge_overlap', default=200, type='int', help='Overlap length (after extension to feature_size) above which to merge features [Default: %default]')
-    parser.add_option('-n', dest='no_db_activity', default=False, action='store_true', help='Do not pass along the activities of the database sequences [Default: %default]')
+    parser.add_option('-i', dest='ignore_auxiliary', default=False, action='store_true',
+                      help='Ignore auxiliary chromosomes that don\'t match "chr\d+ or chrX" [Default: %default]')
+    parser.add_option('-m', dest='merge_overlap', default=200, type='int',
+                      help='Overlap length (after extension to feature_size) above which to merge features [Default: %default]')
+    parser.add_option('-n', dest='no_db_activity', default=False, action='store_true',
+                      help='Do not pass along the activities of the database sequences [Default: %default]')
     parser.add_option('-o', dest='out_prefix', default='features', help='Output file prefix [Default: %default]')
-    parser.add_option('-s', dest='feature_size', default=600, type='int', help='Extend features to this size [Default: %default]')
-    parser.add_option('-y', dest='ignore_y', default=False, action='store_true', help='Ignore Y chromsosome features [Default: %default]')
-    (options,args) = parser.parse_args()
+    parser.add_option('-s', dest='feature_size', default=600, type='int',
+                      help='Extend features to this size [Default: %default]')
+    parser.add_option('-y', dest='ignore_y', default=False, action='store_true',
+                      help='Ignore Y chromsosome features [Default: %default]')
+    (options, args) = parser.parse_args()
 
-    if len(args) != 1:
-    	parser.error('Must provide file labeling the targets and providing BED file paths.')
+    if len(args) != 1:  # need to have at least one file
+        parser.error(
+            'Must provide file labeling the targets and providing BED file paths.')  # return error message if less than 1
     else:
-    	target_beds_file = args[0]
+        target_beds_file = args[0]  # if files exist, target_beds_file = name in col 1 of <sample_beds.txt>
 
     # determine whether we'll add to an existing DB
-    db_targets = []
+    db_targets = []  # create empty array
     db_add = False
     if options.db_bed is not None:
         db_add = True
         if not options.no_db_activity:
             if options.db_act_file is None:
-                parser.error('Must provide both activity table or specify -n if you want to add to an existing database')
+                parser.error(
+                    'Must provide both activity table or specify -n if you want to add to an existing database')
             else:
                 # read db target names
-                db_act_in = open(options.db_act_file) #open <db_act_file>
-                db_targets = db_act_in.readline().strip().split('\t') #separate <db_act_file> by tab and for each line, extract ("strip()") that character only (ie. retrieve name of gene)
+                db_act_in = open(
+                    options.db_act_file)  # open <db_act_file> line 28 --> this will be our <sample_beds.txt> file
+                db_targets = db_act_in.readline().strip().split(
+                    '\t')  # separate <db_act_file> by tab and for each line, extract ("strip()") that character only (ie. retrieve name of cell)
                 db_act_in.close()
 
     # read in targets and assign them indexes into the db
-    target_beds = [] #create empty arrray
-    target_dbi = [] #create empty array
+    target_beds = []  # create empty arrray
+    target_dbi = []  # create empty array
     for line in open(target_beds_file):
-    	a = line.split()
-        if len(a) != 2:
-            print a
+        a = line.split()
+        if len(a) != 2:  # if length is not 2
+            print
+            a  # print line.split()
             print >> sys.stderr, 'Each row of the target BEDS file must contain a label and BED file separated by whitespace'
             exit(1)
-    	target_dbi.append(len(db_targets)) #push into empty <target_dbi array> the length of <db_targets>
-    	db_targets.append(a[0]) #add into <db_targets> array, first col from bed file (ie. name of chromosome)
-    	target_beds.append(a[1]) #push second column of bed file into <target_beds> (ie. starting position of the feature in the chromosome)
+        target_dbi.append(len(
+            db_targets))  # push into empty <target_dbi> array, the length of <db_targets> --> in our case, the cell types from <sample_beds.txt>
+        db_targets.append(a[0])  # add into <db_targets> array, first col from <.NarrowPeak> file (ie. name of cell)
+        target_beds.append(a[
+                               1])  # push second column of <sample_beds.txt> file into <target_beds> (ie. starting position of the feature in the chromosome)
+    # so far, target_beds should look like(?):
+    # [8988T    chr1    XXXXXXX]
 
     # read in chromosome lengths (ie. how many times does chr1, 2, 3, etc. come up)
-    chrom_lengths = {} #"{}" create empty sets (ie. list)
-    if options.chrom_lengths_file:
+    chrom_lengths = {}  # "{}" create empty sets (ie. list)
+    if options.chrom_lengths_file:  # line 30
         chrom_lengths = {}
         for line in open(options.chrom_lengths_file):
             a = line.split()
-            chrom_lengths[a[0]] = int(a[1]) #for every new chrX, count number it shows up
+            chrom_lengths[a[0]] = int(a[1])  # for every new chrX, count number of times it shows up
     else:
         print >> sys.stderr, 'Warning: chromosome lengths not provided, so regions near ends may be incorrect.'
 
@@ -83,33 +101,42 @@ def main():
     chrom_outs = {}
 
     peak_beds = target_beds
-    if db_add:
-        peak_beds.append(options.db_bed)
+    if db_add:  # appending info to the array
+        peak_beds.append(options.db_bed)  # add existing bd BED file to peak_beds
 
     for bi in range(len(peak_beds)):
+        # just open files, if zipped or already open
         if peak_beds[bi][-3:] == '.gz':
             peak_bed_in = gzip.open(peak_beds[bi])
         else:
             peak_bed_in = open(peak_beds[bi])
 
-        for line in peak_bed_in:
-            if not line.startswith('#'):
-                a = line.split('\t')
-                a[-1] = a[-1].rstrip()
+        for line in peak_bed_in:  # go through every row
+            if not line.startswith(
+                    '#'):  # startswith() = return True/False if line starts with specified prefix --> so if doesn't start with '#'
+                a = line.split('\t')  # split by tab
+                # a is each row without the tab btw them
+                a[-1] = a[-1].rstrip()  # return a copy of the string with trailing characters removed
+                # looking at the last character ([-1]). since no argument is passed, we remove the trailing space
 
                 # hash by chrom/strand
                 chrom = a[0]
                 strand = '+'
                 if len(a) > 5 and a[5] in '+-':
-                    strand = a[5]
-                chrom_key = (chrom,strand)
+                    strand = a[5]  # the sixth column will be the strand column
+                chrom_key = (chrom, strand)  # (chrX, )
+                # so we can identify the "coordinates" of each chromosome.
+                # tell them apart from same chr with different strands
 
                 # adjust coordinates to midpoint
                 start = int(a[1])
                 end = int(a[2])
-                mid = find_midpoint(start, end)
+                mid = find_midpoint(start, end)  # we create a function (line ~ 394) that computes the midpoint
+                # easier to create functions that do these things and call them, instead of having to
+                # calculate the midpoint ourselves each time
                 a[1] = str(mid)
                 a[2] = str(mid + 1)
+                # output: chr -- midpoint --- midpoint+1
 
                 # open chromosome file
                 if chrom_key not in chrom_outs:
@@ -117,7 +144,7 @@ def main():
                     chrom_outs[chrom_key] = open(chrom_files[chrom_key], 'w')
 
                 # if it's the db bed
-                if db_add and bi == len(peak_beds)-1:
+                if db_add and bi == len(peak_beds) - 1:
                     if options.no_db_activity:
                         # set activity to null
                         a[6] = '.'
@@ -143,7 +170,7 @@ def main():
     # ignore Y
     if options.ignore_y:
         for orient in '+-':
-            chrom_key = ('chrY',orient)
+            chrom_key = ('chrY', orient)
             if chrom_key in chrom_files:
                 print >> sys.stderr, 'Ignoring chrY %s' % orient
                 os.remove(chrom_files[chrom_key])
@@ -153,25 +180,23 @@ def main():
     if options.ignore_auxiliary:
         primary_re = re.compile('chr\d+$')
         for chrom_key in chrom_files.keys():
-            chrom,strand = chrom_key
+            chrom, strand = chrom_key
             primary_m = primary_re.match(chrom)
             if not primary_m and chrom != 'chrX':
-                print >> sys.stderr, 'Ignoring %s %s' % (chrom,strand)
+                print >> sys.stderr, 'Ignoring %s %s' % (chrom, strand)
                 os.remove(chrom_files[chrom_key])
                 del chrom_files[chrom_key]
-
 
     #################################################################
     # sort chromosome-specific files
     #################################################################
     for chrom_key in chrom_files:
-        chrom,strand = chrom_key
-        chrom_sbed = '%s_%s_%s_sort.bed' % (options.out_prefix,chrom,strand)
+        chrom, strand = chrom_key
+        chrom_sbed = '%s_%s_%s_sort.bed' % (options.out_prefix, chrom, strand)
         sort_cmd = 'sortBed -i %s > %s' % (chrom_files[chrom_key], chrom_sbed)
         subprocess.call(sort_cmd, shell=True)
         os.remove(chrom_files[chrom_key])
         chrom_files[chrom_key] = chrom_sbed
-
 
     #################################################################
     # parse chromosome-specific files
@@ -191,7 +216,7 @@ def main():
             peak_end = int(a[2])
             peak_act = activity_set(a[6])
             peak = Peak(peak_start, peak_end, peak_act)
-            peak.extend(options.feature_size, chrom_lengths.get(chrom,None))
+            peak.extend(options.feature_size, chrom_lengths.get(chrom, None))
 
             if len(open_peaks) == 0:
                 # initialize open peak
@@ -204,7 +229,8 @@ def main():
                 # if beyond existing open peak
                 if open_end - options.merge_overlap <= peak.start:
                     # close open peak
-                    mpeaks = merge_peaks(open_peaks, options.feature_size, options.merge_overlap, chrom_lengths.get(chrom,None))
+                    mpeaks = merge_peaks(open_peaks, options.feature_size, options.merge_overlap,
+                                         chrom_lengths.get(chrom, None))
 
                     # print to file
                     for mpeak in mpeaks:
@@ -221,7 +247,8 @@ def main():
 
         if len(open_peaks) > 0:
             # close open peak
-            mpeaks = merge_peaks(open_peaks, options.feature_size, options.merge_overlap, chrom_lengths.get(chrom,None))
+            mpeaks = merge_peaks(open_peaks, options.feature_size, options.merge_overlap,
+                                 chrom_lengths.get(chrom, None))
 
             # print to file
             for mpeak in mpeaks:
@@ -232,7 +259,6 @@ def main():
     # clean
     for chrom_key in chrom_files:
         os.remove(chrom_files[chrom_key])
-
 
     #################################################################
     # construct/update activity table
@@ -250,7 +276,7 @@ def main():
         peak_id = '%s:%s-%s(%s)' % (a[0], a[1], a[2], a[5])
 
         # construct full activity vector
-        peak_act = [0]*len(db_targets)
+        peak_act = [0] * len(db_targets)
         for ai in a[6].split(','):
             if ai != '.':
                 peak_act[int(ai)] = 1
@@ -286,7 +312,7 @@ def activity_set(act_cs):
 
 def find_midpoint(start, end):
     ''' Find the midpoint coordinate between start and end '''
-    mid = (start + end)/2
+    mid = (start + end) / 2
     return mid
 
 
@@ -310,18 +336,18 @@ def merge_peaks(peaks, peak_size, merge_overlap, chrom_len):
         # find largest overlap
         max_i = 0
         max_overlap = peaks[0].end - peaks[1].start
-        for i in range(1,len(peaks)-1):
-            peaks_overlap = peaks[i].end - peaks[i+1].start
+        for i in range(1, len(peaks) - 1):
+            peaks_overlap = peaks[i].end - peaks[i + 1].start
             if peaks_overlap > max_overlap:
                 max_i = i
                 max_overlap = peaks_overlap
 
         if max_overlap >= merge_overlap:
             # merge peaks
-            peaks[max_i].merge(peaks[max_i+1], peak_size, chrom_len)
+            peaks[max_i].merge(peaks[max_i + 1], peak_size, chrom_len)
 
             # remove merged peak
-            peaks = peaks[:max_i+1] + peaks[max_i+2:]
+            peaks = peaks[:max_i + 1] + peaks[max_i + 2:]
 
     return peaks
 
@@ -345,13 +371,13 @@ def merge_peaks_dist(peaks, peak_size, chrom_len):
     for p in peaks:
         mid = (p.start + p.end - 1) / 2.0
         peak_mids.append(mid)
-        peak_weights.append(1+len(p.act))
+        peak_weights.append(1 + len(p.act))
 
     # take the mean
-    merge_mid = int(0.5+np.average(peak_mids, weights=peak_weights))
+    merge_mid = int(0.5 + np.average(peak_mids, weights=peak_weights))
 
     # extend to the full size
-    merge_start = max(0, merge_mid - peak_size/2)
+    merge_start = max(0, merge_mid - peak_size / 2)
     merge_end = merge_start + peak_size
     if chrom_len and merge_end > chrom_len:
         merge_end = chrom_len
@@ -373,6 +399,7 @@ class Peak:
         end   (int) : peak end
         act   (set[int]) : set of target indexes where this peak is active.
     '''
+
     def __init__(self, start, end, act):
         self.start = start
         self.end = end
@@ -386,7 +413,7 @@ class Peak:
             chrom_len (int) : chromosome length to cap the peak at
         '''
         mid = find_midpoint(self.start, self.end)
-        self.start = max(0, mid - ext_len/2)
+        self.start = max(0, mid - ext_len / 2)
         self.end = self.start + ext_len
         if chrom_len and self.end > chrom_len:
             self.end = chrom_len
@@ -415,18 +442,18 @@ class Peak:
             chrom_len (int) : chromosome length to cap the peak at
         '''
         # find peak midpoints
-        peak_mids = [find_midpoint(self.start,self.end)]
-        peak_mids.append(find_midpoint(peak2.start,peak2.end))
+        peak_mids = [find_midpoint(self.start, self.end)]
+        peak_mids.append(find_midpoint(peak2.start, peak2.end))
 
         # weight peaks
-        peak_weights = [1+len(self.act)]
-        peak_weights.append(1+len(peak2.act))
+        peak_weights = [1 + len(self.act)]
+        peak_weights.append(1 + len(peak2.act))
 
         # compute a weighted average
-        merge_mid = int(0.5+np.average(peak_mids, weights=peak_weights))
+        merge_mid = int(0.5 + np.average(peak_mids, weights=peak_weights))
 
         # extend to the full size
-        merge_start = max(0, merge_mid - ext_len/2)
+        merge_start = max(0, merge_mid - ext_len / 2)
         merge_end = merge_start + ext_len
         if chrom_len and merge_end > chrom_len:
             merge_end = chrom_len
