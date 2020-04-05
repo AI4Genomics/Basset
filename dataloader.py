@@ -36,3 +36,4 @@ for epoch in range(epochs):
     print("Epoch {}/{}:".format(epoch+1, epochs))
     for i, (x,y) in enumerate(train_dataloader):
         print("     batch {}/{} or {} examples.".format(i+1, int(np.ceil(n/batch_size)), y.size(0)))
+#At every iteration, the dataloader returns a mini-batch of batch_size input-label pairs (x, y).
