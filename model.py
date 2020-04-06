@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-class basset(nn.Module):
+class Basset(nn.Module):
     """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
 
     Parameters:
