@@ -5,8 +5,7 @@
 
 #train_dataloader = DataLoader(train_dataset, batchsize, shuffle=False, num_workers=data_workers)
 
-
-from torch.utils.data import Dataset, TensorDataset
+import dataset
 from torch.utils.data import DataLoader
 
 n = 100
