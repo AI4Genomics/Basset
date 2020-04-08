@@ -16,7 +16,7 @@ print("GPU Available: {}".format(use_gpu))
 
 class BassetDataset(Dataset):
     # Initializes the BassetDataset
-    def __init__(self, path, f5name, sequences, labels, transform=None):
+    def __init__(self, path, f5name, split='train', transform=None):
         """
         Args:
             :param path: path to HDF5 file
@@ -71,5 +71,5 @@ if __name__ == '__main__': # Notice: this helps to run this script independent f
         pass
     print('Done')    
     
-    basset_dataset = BassetDataset(data_path, file_name, 'train_in', 'train_out')
+    basset_dataset = BassetDataset(args.path, args.file_name, args.split)#, 'train_in', 'train_out') # Notice: we need something similar to this in train.py & test.py (after importing BassetDataset)
     # Notice: you must check some tensor shapes and other stuff here (for basset_dataset[0] & basset_dataset[1]) to make sure it's done right above
