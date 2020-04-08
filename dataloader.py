@@ -9,25 +9,9 @@
 from torch.utils.data import Dataset, TensorDataset
 from torch.utils.data import DataLoader
 
-def create_dataset(seq, labels, n):
-    """
-    Slice the first n seq/labels and create a torch.utils.data.DataLoader.
-
-    Args:
-    :param seq: numpy array of sequences
-    :param labels: list of labels associated with the sequences
-    :param n: the number of seq/labels to slice
-
-    :return: A torch.utils.data.TensorDataset to be used with a torch.utils.data.DataLoader.
-    """
-    sequences = torch.tensor(seq[:n], dtype=torch.float)
-    labels = torch.tensor(labels[:n], dtype=torch.long)
-    dataset = TensorDataset(seq, labels)
-    return dataset
-
 n = 100
 batch_size = 32
-train_dataset = create_dataset(train_in, train_out, n)
+train_dataset = basset_dataset #output from dataset.py
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, drop_last=False, shuffle=TRUE)
 #By setting drop_last=False, the last incomplete batch is kept if the dataset size is not divisible by batch_size.
 
