@@ -8,6 +8,11 @@
 import dataset
 from torch.utils.data import DataLoader
 
+#output from preprocess
+train_dataset = zip(train_seq, train_labels)
+test_dataset = zip() #hmmm....
+valid_dataset = zip(valid_seq, valid_labels)
+
 train_dataset_sizes = len(train_dataset)
 num_train_samples = int(0.8 * train_dataset_sizes)
 num_valid_samples = train_dataset_sizes - num_train_samples
