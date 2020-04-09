@@ -8,12 +8,23 @@
 import dataset
 from torch.utils.data import DataLoader
 
-n = 100
 batch_size = 32
-train_dataset = basset_dataset #output from dataset.py
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, drop_last=False, shuffle=TRUE)
-#By setting drop_last=False, the last incomplete batch is kept if the dataset size is not divisible by batch_size.
 
+train_loader = DataLoader(dataset=train_dataset,
+                          sampler=BassetDataset(num_train_samples, 0),
+                          batch_size=batch_size,
+                          drop_last=False, #By setting drop_last=False, the last incomplete batch is kept if the dataset size is not divisible by batch_size.
+                          shuffle=False)
+
+valid_loader = DataLoader(dataset=train_dataset,
+                          sampler=BassetDataset(
+                              num_valid_samples, num_train_samples),
+                          batch_size=batch_size,
+                          shuffle=False)
+
+test_loader = DataLoader(dataset=test_dataset,
+                         batch_size=batch_size,
+                         shuffle=False)
 epochs = 2
 for epoch in range(epochs):
     print("Epoch {}/{}:".format(epoch+1, epochs))
