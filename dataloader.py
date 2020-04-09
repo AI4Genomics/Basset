@@ -5,12 +5,14 @@
 
 #train_dataloader = DataLoader(train_dataset, batchsize, shuffle=False, num_workers=data_workers)
 
+import preprocess
 import dataset
 from torch.utils.data import DataLoader
 
+#TODO: SIMPLY EXTRACT THE TRAINING, TESTING AND VALIDATION SET ALREADY GENERATED FROM THE PREPROCESSING USING COMMAND LINE
 #output from preprocess
 train_dataset = zip(train_seq, train_labels)
-test_dataset = zip() #hmmm....
+#test_dataset = zip() #hmmm....
 valid_dataset = zip(valid_seq, valid_labels)
 
 train_dataset_sizes = len(train_dataset)
