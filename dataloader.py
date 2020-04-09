@@ -23,25 +23,33 @@ print('# of valid examples: {}'.format(num_valid_samples))
 print('# of test examples: {}'.format(num_test_samples))
 
 batch_size = 32
+epochs = 2
 
 train_loader = DataLoader(dataset=train_dataset,
                           sampler=BassetDataset(num_train_samples, 0),
                           batch_size=batch_size,
                           drop_last=False, #By setting drop_last=False, the last incomplete batch is kept if the dataset size is not divisible by batch_size.
                           shuffle=False)
+for epoch in range(epochs):
+    print("Epoch {}/{}:".format(epoch+1, epochs))
+    for i, (x,y) in enumerate(train_loader):
+        print("     batch {}/{} or {} examples.".format(i+1, int(np.ceil(n/batch_size)), y.size(0)))
+#At every iteration, the dataloader returns a mini-batch of batch_size input-label pairs (x, y).
 
 valid_loader = DataLoader(dataset=train_dataset,
                           sampler=BassetDataset(
                               num_valid_samples, num_train_samples),
                           batch_size=batch_size,
                           shuffle=False)
+for epoch in range(epochs):
+    print("Epoch {}/{}:".format(epoch+1, epochs))
+    for i, (x,y) in enumerate(valid_loader):
+        print("     batch {}/{} or {} examples.".format(i+1, int(np.ceil(n/batch_size)), y.size(0)))
 
 test_loader = DataLoader(dataset=test_dataset,
                          batch_size=batch_size,
                          shuffle=False)
-epochs = 2
 for epoch in range(epochs):
     print("Epoch {}/{}:".format(epoch+1, epochs))
-    for i, (x,y) in enumerate(train_dataloader):
+    for i, (x,y) in enumerate(test_loader):
         print("     batch {}/{} or {} examples.".format(i+1, int(np.ceil(n/batch_size)), y.size(0)))
-#At every iteration, the dataloader returns a mini-batch of batch_size input-label pairs (x, y).
