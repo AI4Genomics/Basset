@@ -8,6 +8,15 @@
 import dataset
 from torch.utils.data import DataLoader
 
+train_dataset_sizes = len(train_dataset)
+num_train_samples = int(0.8 * train_dataset_sizes)
+num_valid_samples = train_dataset_sizes - num_train_samples
+num_test_samples = len(test_dataset)
+
+print('# of train examples: {}'.format(num_train_samples))
+print('# of valid examples: {}'.format(num_valid_samples))
+print('# of test examples: {}'.format(num_test_samples))
+
 batch_size = 32
 
 train_loader = DataLoader(dataset=train_dataset,
