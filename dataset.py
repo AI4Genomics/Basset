@@ -28,7 +28,6 @@ class BassetDataset(Dataset):
 
         # Create a list called <samples> which will store all the sequences/datapoints from HDF5 file
         self.samples = h5py.File(os.path.join(path, f5name))
-        #
         self.train = self.samples['.'][sequences]
         self.test = self.samples['.'][labels]
         self.samples_len, self.n_nucleotides, _, self.seq_len = self.test.shape
@@ -42,14 +41,17 @@ class BassetDataset(Dataset):
 
     # Returns the size of the dataset
     def __len__(self):
-        return self.samples_len
+        return len(self.train)
 
     # Returns a sample from the dataset given an index
     def __getitem__(self, index):
         """
         This method gets its idx-th item from the dataset
         """
-        return self.train[index], self.test[index]
+        seq, label = self.train[index], self.test[index]
+        if self.transform:
+            seq = self.transform(seq)
+        return seq, label
 
     def cleanup(self):
         self.samples.close()
