@@ -10,10 +10,15 @@ import dataset
 from torch.utils.data import DataLoader
 
 #TODO: SIMPLY EXTRACT THE TRAINING, TESTING AND VALIDATION SET ALREADY GENERATED FROM THE PREPROCESSING USING COMMAND LINE
-#output from validation_dataset
-train_dataset = zip(train_seq, train_labels)
-#test_dataset = zip() #hmmm....
-valid_dataset = zip(valid_seq, valid_labels)
+with h5py.File('er.h5', 'r') as hdf:
+    ls = list(hdf.keys())
+    print('List of datasets in this file: \n', ls)
+    train_dataset = hdf.get('train_in')
+    test_dataset = hdf.get('train_out')
+    valid_dataset =
+    print("Shape of the input training data is:", train_in.shape)
+    print("Shape of the out training data is:", train_out.shape)
+    print(hdf.get('test_headers')[150])
 
 train_dataset_sizes = len(train_dataset)
 num_train_samples = int(0.8 * train_dataset_sizes)
