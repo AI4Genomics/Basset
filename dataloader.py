@@ -10,7 +10,7 @@ import dataset
 from torch.utils.data import DataLoader
 
 #TODO: SIMPLY EXTRACT THE TRAINING, TESTING AND VALIDATION SET ALREADY GENERATED FROM THE PREPROCESSING USING COMMAND LINE
-#output from preprocess
+#output from validation_dataset
 train_dataset = zip(train_seq, train_labels)
 #test_dataset = zip() #hmmm....
 valid_dataset = zip(valid_seq, valid_labels)
