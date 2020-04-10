@@ -48,22 +48,7 @@ with h5py.File('er.h5', 'r') as hdf:
     valid_in = hdf["valid_in"]
     print("Dataset valid_in:", valid_in)
 
-
-
-# creating Train, Test, Validation objects
-# reading groups in the HDF5 file
-with h5py.File('er.h5', 'r') as hdf:
-    base_items = list(hdf.items())
-    print("Items in the base directory: \n", base_items)
-
-    # # let's see what our target labels are...
-    # target_labels = hdf.get('target_labels')
-    # print("Target_labels:", target_labels)
-    # target_labels_items = list(target_labels.items())
-    # print("Items in Target Labels:", target_labels_items)
-
-
-
+#TODO NEXT STEPS FOR DATALOADER
 train_dataset_sizes = len(train_dataset)
 num_train_samples = int(0.8 * train_dataset_sizes)
 num_valid_samples = train_dataset_sizes - num_train_samples
