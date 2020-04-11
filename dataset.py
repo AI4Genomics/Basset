@@ -59,7 +59,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', type=str, default='./data', help="Path to the dataset directory (default: './data'.")
     parser.add_argument('--file_name', type=str, default='sample_dataset.h5', help='Name of the h5 file already preprocessed in the preprocessing step (default: sample_dataset.h5).')
-    parser.add_argument('--split', type=str, default='train', help='Defines what data split to work with (default: tarin).')
+    parser.add_argument('--split', type=str, default='train', help='Defines what data split to work with (default: train).')
     args = parser.parse_args()
     
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
