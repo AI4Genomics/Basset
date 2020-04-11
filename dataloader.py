@@ -3,7 +3,16 @@
 # It can also apply some sort of transformation to the data if we ask to
 #   (eg, rotating the input images with slight angles in each training iteration so the network would see them as new images and won't overfit)
 
+# Goal: extract 3 separate files -- training, testing, and validation sets
 #train_dataloader = DataLoader(train_dataset, batchsize, shuffle=False, num_workers=data_workers)
+
+<<<<<<< HEAD
+from torchim.utils.data import DataLoader
+
+#TODO: SIMPLY EXTRACT THE TRAINING, TESTING AND VALIDATION SET ALREADY GENERATED FROM THE PREPROCESSING USING COMMAND LINE
+
+import numpy as np
+import h5py
 
 import os
 import h5py
@@ -46,7 +55,7 @@ with h5py.File('er.h5', 'r') as hdf:
     valid_in = hdf["valid_in"]
     print("Dataset valid_in:", valid_in)
 
-
+#TODO NEXT STEPS FOR DATALOADER
 train_dataset_sizes = len(train_dataset)
 num_train_samples = int(0.8 * train_dataset_sizes)
 num_valid_samples = train_dataset_sizes - num_train_samples
