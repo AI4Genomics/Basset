@@ -6,12 +6,19 @@
 # Goal: extract 3 separate files -- training, testing, and validation sets
 #train_dataloader = DataLoader(train_dataset, batchsize, shuffle=False, num_workers=data_workers)
 
+<<<<<<< HEAD
 from torchim.utils.data import DataLoader
 
 #TODO: SIMPLY EXTRACT THE TRAINING, TESTING AND VALIDATION SET ALREADY GENERATED FROM THE PREPROCESSING USING COMMAND LINE
 
 import numpy as np
 import h5py
+
+import os
+import h5py
+import preprocess
+import dataset
+from torch.utils.data import DataLoader
 
 with h5py.File('er.h5', 'r') as hdf:
     ls = list(hdf.keys())
