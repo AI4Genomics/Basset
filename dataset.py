@@ -1,77 +1,70 @@
 # Dataset class would split the original data into train, test, validation splits.
 # The original data is the result of the preprocessing step which can be stored in a text, csv, hdf5, etc file
 
-import torch
+import os
+import h5py
 import numpy as np
 from torch.utils.data import Dataset
 
-seed = 1234
-np.random.seed(seed) # Set the random seed of numpy for the data split.
-
-use_gpu = torch.cuda.is_available()
-device = torch.device("cuda:0" if use_gpu else "cpu")
-
-print("Torch version: ", torch.__version__)
-print("GPU Available: {}".format(use_gpu))
 
 class BassetDataset(Dataset):
+
     # Initializes the BassetDataset
-    def __init__(self, path, f5name, split='train', transform=None):
+    def __init__(self, path, f5name, split, transform=None):
         """
         Args:
             :param path: path to HDF5 file
             :param f5name: HDF5 file name
-            :param sequences: input dataset name
-            :param labels: output dataset name
+            :param split: split that we are interested to work with
             :param transform (callable, optional): Optional transform to be applied on a sample
         """
+        
+        self.split = split
+        
+        split_dict = {'train': ['train_in', 'train_out'], 
+                      'test': ['test_in', 'test_out'], 
+                      'valid': ['valid_in', 'valid_out']}
+        
+        assert self.split in split_dict, "'split' argument can be only defined as 'train', 'valid' or 'test'"
+        
+        # Open hdf5 file where one-hoted data are stored
+        self.dataset = h5py.File(os.path.join(path, f5name.format(self.split)), 'r')
+        
+        # Keeping track of the names of the target labels
+        self.target_labels = self.dataset['target_labels']
+        
+        # Get the list of volumes
+        self.inputs = self.dataset[split_dict[split][0]]
+        self.outputs = self.dataset[split_dict[split][1]]
+        if self.split!='test':
+            self.ids = list(range(len(self.inputs)))
+        else:
+            self.ids = np.char.decode(self.dataset['test_headers'])
+            
+    def __getitem__(self, i):
+        
+        id = self.ids[i]
 
-        # Create a list called <samples> which will store all the sequences/datapoints from HDF5 file
-        self.samples = h5py.File(os.path.join(path, f5name))
-        self.train = self.samples['.'][sequences]
-        self.test = self.samples['.'][labels]
-        self.samples_len, self.n_nucleotides, _, self.seq_len = self.test.shape
-        self.output_len, self.n_output = self.test.shape
-        assert self.samples_len == self.output_len  # testing that samples_len & output_len are same == self.test_shape & self.y.shape are same
-        self.train = self.train[:].reshape([self.samples_len, self.n_nucleotides, self.seq_len])
+        # Sequence & Target
+        sequence, target = self.inputs[id], self.outputs[id]
 
-        print("samples input shape: {}".format(self.train.shape))
-        print(self.train[1])
-        # samples.close()
+        return sequence, target
 
-    # Returns the size of the dataset
     def __len__(self):
-        return len(self.train)
-
-    # Returns a sample from the dataset given an index
-    def __getitem__(self, index):
-        """
-        This method gets its idx-th item from the dataset
-        """
-        seq, label = self.train[index], self.test[index]
-        if self.transform:
-            seq = self.transform(seq)
-        return seq, label
-
-    def cleanup(self):
-        self.samples.close()
+        return len(self.ids)
 
 
-if __name__ == '__main__': # Notice: this helps to run this script independent from the rest of the project as well
+if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser() # Notice: list of the arguments for this script, feel free to add more if you think it is needed
-    parser.add_argument('--path', type=str, required=True, help='Path to the dataset directory.')
-    parser.add_argument('--file_name', type=str, required=True, help='Name of the h5 file already preprocessed.')
-    parser.add_argument('--split', type=str, default='train', help='Defines what data split to work with (default=tarin).')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', type=str, default='./data', help="Path to the dataset directory (default: './data'.")
+    parser.add_argument('--file_name', type=str, default='sample_dataset.h5', help='Name of the h5 file already preprocessed in the preprocessing step (default: sample_dataset.h5).')
+    parser.add_argument('--split', type=str, default='train', help='Defines what data split to work with (default: tarin).')
     args = parser.parse_args()
     
-    print("Arguments are: ".format(args)) # Notice: this line needs to be removed later; use 'python dataset.py --help' instead (try now!) to get the list of args
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print("Arguments are:\n{}".format(vars(args))) # better to use '--help' instead (try now!) to get the list of args; please remove after understanding
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     
-    if args.split=='train': # Notive, you need to complete this based on your preference 
-        print('Preparing Basset Dataset for training phase...')
-    else:
-        pass
-    print('Done')    
-    
-    basset_dataset = BassetDataset(args.path, args.file_name, args.split)#, 'train_in', 'train_out') # Notice: we need something similar to this in train.py & test.py (after importing BassetDataset)
-    # Notice: you must check some tensor shapes and other stuff here (for basset_dataset[0] & basset_dataset[1]) to make sure it's done right above
+    basset_dataset = BassetDataset(args.path, args.file_name, args.split)
+    print("The number of samples in the {} split of the input file '{}' is {}.\n".format(args.split, args.file_name, len(basset_dataset)))
