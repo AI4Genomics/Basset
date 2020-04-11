@@ -30,7 +30,7 @@ parser.add_argument('--path', type=str, default='./data', help="Path to the data
 parser.add_argument('--file_name', type=str, default='sample_dataset.h5', help='Name of the h5 file already preprocessed in the preprocessing step (default: sample_dataset.h5).')
 parser.add_argument('--batch_size', type=int, default=256, help='Defines the batch size for training phase (default: 64).')
 parser.add_argument('--nb_epochs', type=int, default=2, help='Defines the maximum number of epochs the network needs to train (default: 200).')
-parser.add_argument('--omptimizer', type=str, default='adam', help='The method used for optimization of the model (default: "adam").') 
+parser.add_argument('--optimizer', type=str, default='adam', help='The method used for optimization of the model (default: "adam").')
 parser.add_argument('--validate', type=bool, default=True, help='Whether to use validation set')
 parser.add_argument('--learning_rate', type=float, default=0.004, help='Learning rate for the optimizer (default: 0.004)')
 parser.add_argument('--beta1', type=float, default=0.5, help='"beta1" for the optimizer')
