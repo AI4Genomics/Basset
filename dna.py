@@ -61,7 +61,6 @@ print(seq_vec)
 
 def vecs2dna(seq_vecs):
     '''
-
     Input:
         seq_vecs:
     Output:
