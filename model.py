@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-#TODO: LOOK OVER SOLUTIONS <CLASS RESNET_DISCRIMINATOR_2D(NN.MODULE):> SECTION
+#TODO: LOOK OVER SOLUTIONS <CLASS RESBLOCK_2D(NN.MODULE):> SECTION
 class Basset(nn.Module):
     """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
 
