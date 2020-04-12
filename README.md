@@ -1,3 +1,6 @@
+<br>
+<img src="img/basset_logo.jpg" width="200">
+
 # Basset
 _PyTorch implementation of the paper:_
 #### Basset: Learning the regulatory code of the accessible genome with deep convolutional neural networks ([paper](https://genome.cshlp.org/content/early/2016/05/03/gr.200535.115.abstract))<br><br>
