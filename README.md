@@ -1,4 +1,4 @@
-<img src="img/basset.jpg" width="250">
+<img src="img/basset_logo.jpg" width="200">
 
 # Basset
 _PyTorch implementation of the paper:_
