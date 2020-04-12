@@ -1,3 +1,4 @@
+<br>
 <img src="img/basset_logo.jpg" width="200">
 
 # Basset
