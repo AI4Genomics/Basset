@@ -116,3 +116,12 @@ for n_epoch in range(args.nb_epochs):
     # checkpoint the basset_net in the log folder
     former_iteration_endpoint = cal_iter_time(former_iteration_endpoint, tz)
 
+#Network/model Optimization
+# cost function
+criterion = nn.BCEWithLogitsLoss()
+
+# setup optimizer
+optimizerD = optim.Adam(list(netD.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
+
+# use an exponentially decaying learning rate
+schedulerD= optim.lr_scheduler.ExponentialLR(optimizerD, gamma=0.99)
