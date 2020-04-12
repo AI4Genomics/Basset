@@ -27,14 +27,3 @@ class Basset(nn.Module):
         pass
 
 
-#Network/model Optimization
-# cost function
-criterion = nn.BCEWithLogitsLoss()
-
-# setup optimizer
-optimizerG = optim.Adam(list(netG.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
-optimizerD = optim.Adam(list(netD.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
-
-# use an exponentially decaying learning rate
-schedulerG = optim.lr_scheduler.ExponentialLR(optimizerG, gamma=0.99)
-schedulerD= optim.lr_scheduler.ExponentialLR(optimizerD, gamma=0.99)
