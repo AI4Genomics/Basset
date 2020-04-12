@@ -1,37 +1,57 @@
-"""Helpers for working with DNA/RNA data"""
+#Methods to load training data
 
-import os
+from __future__ import print_function
+import sys
+from collections import OrderedDict
+
 import numpy as np
+import numpy.random as npr
+from sklearn import preprocessing
 
-"""Helpers for working with DNA data"""
-
-# fix vocabulary
-dna_vocab = {"A":0,
-             "C":1,
-             "G":2,
-             "T":3,
-             "*":4} # catch-all auxiliary token
-
-dna_nt_only_vocab = {k:v for k,v in dna_vocab.items() if k in "ACGT"} # dna nucleotides only
-rev_dna_vocab = {v:k for k,v in dna_nt_only_vocab.items()}
-
-def get_vocab(vocab_name, vocab_order=None):
-    if vocab_name=="dna":
-        charmap = dna_vocab
-    elif vocab_name=="dna_nt_only":
-        charmap = dna_nt_only_vocab
+def dna_one_hot(seq, seq_len=None, flatten=True):
+    """
+    Input:
+      seq
+    Output:
+       seq_vec: Flattened column vector
+    """
+    if seq_len == None:
+        seq_len = len(seq)
+        seq_start = 0
     else:
-        raise Exception("Unknown vocabulary name.")
-
-    if vocab_order:
-        if set(vocab_order) != set(charmap):
-            raise ValueError("Provided `vocab` and `vocab_order` arguments are not compatible")
+        if seq_len <= len(seq):
+            # trim the sequence
+            seq_trim = (len(seq)-seq_len) // 2
+            seq = seq[seq_trim:seq_trim+seq_len]
+            seq_start = 0
         else:
-            charmap = {c: idx for idx, c in enumerate(vocab_order)}
+            seq_start = (seq_len-len(seq)) // 2
 
-    rev_charmap = {v: k for k, v in charmap.items()}
-    return charmap, rev_charmap
+    seq = seq.upper()
 
+    seq = seq.replace('A','0')
+    seq = seq.replace('C','1')
+    seq = seq.replace('G','2')
+    seq = seq.replace('T','3')
 
-test_seq = "ATATGCGTCCCCA"
-get_vocab(test_seq)
+    # map nt's to a matrix 4 x len(seq) of 0's and 1's.
+    #  dtype='int8' fails for N's
+    seq_code = np.zeros((4,seq_len), dtype='float16')
+    for i in range(seq_len):
+        if i < seq_start:
+            seq_code[:,i] = 0.25
+        else:
+            try:
+                seq_code[int(seq[i-seq_start]),i] = 1
+            except:
+                seq_code[:,i] = 0.25
+
+    # flatten and make a column vector 1 x len(seq)
+    if flatten:
+        seq_vec = seq_code.flatten()[None,:]
+
+    return seq_vec
+
+#test
+seq = "ATAGCT"
+dna_one_hot(seq)
