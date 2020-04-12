@@ -17,9 +17,7 @@ seq = "ATGCAATTAGCT"
 seq_vec = dna_to_onehot(seq)
 print(seq_vec)
 
-
-
-
+#TODO: transform one-hot array to dna characters (not vector)
 def vecs2dna(seq_vecs):
     '''
     Input:
