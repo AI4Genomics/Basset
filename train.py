@@ -87,11 +87,11 @@ basset_net = Basset()
 criterion = nn.BCEWithLogitsLoss()
 
 # setup optimizer & scheduler
-if args.optimizer=='adam':
+"""if args.optimizer=='adam':
     optimizer = optim.Adam(list(basset_net.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
 elif args.optimizaer=='rmsprop':
     optimizaer = optim.RMSprop(list(basset_net.parameters()), lr=args.learning_rate)
-scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99) # use an exponentially decaying learning rate
+scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)  # use an exponentially decaying learning rate """ 
 
 # keeping track of the time
 start_time = datetime.datetime.now(tz)
