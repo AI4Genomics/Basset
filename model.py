@@ -13,32 +13,43 @@ class Basset(nn.Module):
 
     Parameters:
         inputs (tensor): Batch of one-hot-encoded sequences.
-	    `torch.nn.Conv2d(in_channels, out_channels, kernel_size)` applies a 2D convolution on the input channels.
-        `torch.nn.MaxPool2d(kernel_size)` applies 2D max pooling on the input channels
-        `torch.nn.Relu()` applies an elementwise Relu activation: Relu(x) = max(0, x).
-        `torch.nn.Linear(in_features, out_features)` applies a linear transformation on its input: y = Ax + b.
-        `torch.nn.Softmax(dim)` applies a softmax activation to an n-dimensional tensor (normalizes the exponentiated entries)
-        `torch.nn.sequential` a sequential container in which to add modules in the order in which they will be constructed.
+        num_channels (int):Generator dimension parameter (in each resnet block).
+           latent_dim (int):Size of latent space (i.e., the first layer dimension).
+           vocab_size (int):Size of the last layer output channel.
+           seq_len (int):Length of the output sequence.
+           num_layers (int):How many repetitions of 'resblock_2d' for generator.
 
         forward(input) successively applies the input data to the different layers defined in __init__
     Returns:
-        outputs (tensor): Should be explained later.
+        outputs (tensor):Batch of (single) values for real or generated inputs.
 
     """
-    def __init__(self, other_arguments=None):
+
+    def __init__(self, num_channels, latent_dim, vocab_size, seq_len, layers=5):
         super(Basset, self).__init__()
-        modules = []
-        for r in range(2):
-            modules.append(
-                self.block = nn.Sequential(
-                    nn.Conv2d(num_channels, num_channels, kernel_size, stride=(1, 1),
-                          padding=(kernel_size[0] // 2, kernel_size[1] // 2)),  # bottleneck: (batch, width, out_chan)
-                 nn.BatchNorm2d(num_channels),
-                 relu
-             )
-        )
-    self.block = nn.Sequential(*modules)
-    
+
+        self.num_channels = num_channels
+        self.vocab_size = vocab_size
+        self.seq_len = seq_len
+        self.layers = layers
+
+        self.initial_layer = nn.Linear(latent_dim, vocab_size * seq_len * num_channels)
+        blocks = []
+        for i in range(layers):
+            blocks.append(
+                self.blocks = nn.Sequential(*blocks)
+                self.conv = nn.Sequential(
+                    nn.Conv2d(num_channels, 1, (3, 1), stride=(1, 1), padding=(3 // 2, 0)), # bottleneck: (batch, width, out_chan)
+                    relu
+                )
+            )
     def forward(self, inputs):
-        outputs = self.block(inputs)
+        outputs = self.initial_layer(inputs)
+        outputs = torch.reshape(outputs, [-1, self.num_channels, self.vocab_size, self.seq_len])
+        inputs = outputs
+        for i in range(self.layers):
+            outputs = 1.0 * self.blocks[i](inputs) + inputs  # where resnet idea comes into play!
+            inputs = outputs
+        outputs = self.conv(outputs)
+        outputs = torch.reshape(outputs, [-1, self.vocab_size, self.seq_len])
         return outputs
