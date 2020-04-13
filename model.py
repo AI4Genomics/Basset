@@ -27,28 +27,18 @@ class Basset(nn.Module):
     """
     def __init__(self, other_arguments=None):
         super(Basset, self).__init__()
-        self.block1 = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=5, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.block2 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=5, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.fc = nn.Linear(7 * 7 * 32, 10)
-
+        modules = []
+        for r in range(2):
+            modules.append(
+                self.block = nn.Sequential(
+                    nn.Conv2d(num_channels, num_channels, kernel_size, stride=(1, 1),
+                          padding=(kernel_size[0] // 2, kernel_size[1] // 2)),  # bottleneck: (batch, width, out_chan)
+                 nn.BatchNorm2d(num_channels),
+                 relu
+             )
+        )
+    self.block = nn.Sequential(*modules)
+    
     def forward(self, inputs):
-        out = self.block1(inputs)
-
-        out = self.block2(out)
-
-        # Flatten the output of block2
-        out = out.view(out.size(0), -1)
-
-        out = self.fc(out)
-
-        return out
-
-    model = Basset()
+        outputs = self.block(inputs)
+        return outputs
