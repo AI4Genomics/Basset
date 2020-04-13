@@ -43,6 +43,7 @@ class Basset(nn.Module):
                     relu
                 )
             )
+
     def forward(self, inputs):
         outputs = self.initial_layer(inputs)
         outputs = torch.reshape(outputs, [-1, self.num_channels, self.vocab_size, self.seq_len])
