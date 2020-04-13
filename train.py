@@ -18,11 +18,11 @@ import pprint
 import requests
 import logomaker # https://github.com/jbkinney/logomaker/tree/master/logomaker/tutorials (should be moved to the util.py)
 import argparse
-from util import *
+from util import cal_iter_time
 from pytz import timezone
 from torch.utils.data import DataLoader
 from dataset import BassetDataset
-#from model import BassetNet
+from model import Basset
 
 tz = timezone('US/Eastern')
 pp = pprint.PrettyPrinter(indent=4)
@@ -80,6 +80,19 @@ print("The first 10 ids of test samples are:\n  {}\n".format("\n  ".join(basset_
 basset_dataloader_train = DataLoader(basset_dataset_train, batch_size=args.batch_size, drop_last=True, shuffle=True, num_workers=1)
 basset_dataloader_valid = DataLoader(basset_dataset_valid, batch_size=len(basset_dataset_valid), drop_last=False, shuffle=False, num_workers=1)
 
+# basset network instantiation
+basset_net = Basset()
+
+# cost function
+criterion = nn.BCEWithLogitsLoss()
+
+# setup optimizer & scheduler
+if args.optimizer=='adam':
+    optimizer = optim.Adam(list(basset_net.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
+elif args.optimizaer=='rmsprop':
+    optimizaer = optim.RMSprop(list(basset_net.parameters()), lr=args.learning_rate)
+scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99) # use an exponentially decaying learning rate
+
 # keeping track of the time
 start_time = datetime.datetime.now(tz)
 former_iteration_endpoint = start_time
@@ -97,7 +110,7 @@ for n_epoch in range(args.nb_epochs):
         print("Shape of the batch for training input (batch_{}/epoch_{}): {}".format(n_batch+1, n_epoch+1, seqs.shape))
         print("Shape of the batch for training output (batch_{}/epoch_{}): {}\n".format(n_batch+1, n_epoch+1, trgs.shape))
         ### IMPORTANT: here, seqs whold be fed to the BassetNet (imported above) and output of it would be compare against trgs for network optimization
-        # predictions = basset_network(seqs)
+        # predictions = basset_net(seqs)
         # err = compare(predictions vs. trgs)
         # err.backwards
         # basset_network.step()
@@ -116,12 +129,3 @@ for n_epoch in range(args.nb_epochs):
     # checkpoint the basset_net in the log folder
     former_iteration_endpoint = cal_iter_time(former_iteration_endpoint, tz)
 
-#Network/model Optimization
-# cost function
-criterion = nn.BCEWithLogitsLoss()
-
-# setup optimizer
-optimizerD = optim.Adam(list(netD.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
-
-# use an exponentially decaying learning rate
-schedulerD= optim.lr_scheduler.ExponentialLR(optimizerD, gamma=0.99)

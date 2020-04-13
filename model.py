@@ -21,7 +21,7 @@ class Basset(nn.Module):
     """
     def __init__(self, other_arguments=None):
         super(Basset, self).__init__()
-	pass
+        pass
 
     def forward(self, inputs):
         pass

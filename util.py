@@ -23,7 +23,7 @@ def dna_to_onehot(seq_nts):
 
 
 #TODO: transform one-hot array to dna characters (not vector)
-def vecs2dna(seq_vecs):
+"""def vecs2dna(seq_vecs):
     '''
     Input:
         seq_vecs:
@@ -57,4 +57,6 @@ def vecs2dna(seq_vecs):
     return seqs
 
 #test
-vecs2dna(seq_vec)
+seq = "ATGCAATTAGCT"
+seq_vec = dna_to_onehot(seq)
+vecs2dna(seq_vec)"""
