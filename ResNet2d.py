@@ -7,45 +7,31 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-#TODO: LOOK OVER SOLUTIONS <CLASS RESBLOCK_2D(NN.MODULE):> SECTION
-class Basset(nn.Module):
-    """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
-
+class ResNet2d(nn.Module):
+    """ ResNet2d network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
     Parameters:
         inputs (tensor): Batch of one-hot-encoded sequences.
-        num_channels (int):Generator dimension parameter (in each resnet block).
-           latent_dim (int):Size of latent space (i.e., the first layer dimension).
-           vocab_size (int):Size of the last layer output channel.
-           seq_len (int):Length of the output sequence.
-           num_layers (int):How many repetitions of 'resblock_2d' for generator.
-
-        forward(input) successively applies the input data to the different layers defined in __init__
+	other_arguments: Should be explained later.
     Returns:
-        outputs (tensor):Batch of (single) values for real or generated inputs.
-
+        outputs (tensor): Should be explained later.
     """
-
-    def __init__(self, num_channels, latent_dim, vocab_size, seq_len, layers=5):
-        super(Basset, self).__init__()
-        self.block1 = nn.Sequential(
-            nn.Conv2d(4, 16, (2,2), stride=(1,1), padding=(3//2, 0)),
-            nn.ReLU,
-            nn.MaxPool2d(2))
-
-        self.block2 = nn.Sequential(
-            nn.Conv2d(16, 32, (2,2), stride=(1,1), padding=(3//2, 0)),
-            nn.ReLU,
-            nn.MaxPool2d(2)
-
-        self.fc = nn.Linear(vocab_size*seq_len*32, 10)
-        )
-
+    def __init__(self, other_arguments=None):
+        super(ResNet2d, self).__init__()
+        pass
     def forward(self, inputs):
-        outputs = self.block1(inputs)
-        outputs - self.block2(outputs)
+        pass
 
-        #Flatten the output of block2
-        outputs = outputs.view(outputs.size(0), -1)
 
-        outputs = self.fc(outputs)
-        return outputs
+class Basset(nn.Module):
+    """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
+    Parameters:
+        inputs (tensor): Batch of one-hot-encoded sequences.
+	other_arguments: Should be explained later.
+    Returns:
+        outputs (tensor): Should be explained later.
+    """
+    def __init__(self, other_arguments=None):
+        super(Basset, self).__init__()
+        pass
+    def forward(self, inputs):
+        pass
