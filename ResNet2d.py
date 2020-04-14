@@ -27,30 +27,25 @@ class Basset(nn.Module):
 
     def __init__(self, num_channels, latent_dim, vocab_size, seq_len, layers=5):
         super(Basset, self).__init__()
+        self.block1 = nn.Sequential(
+            nn.Conv2d(4, 16, (2,2), stride=(1,1), padding=(3//2, 0)),
+            nn.ReLU,
+            nn.MaxPool2d(2))
 
-        self.num_channels = num_channels
-        self.vocab_size = vocab_size
-        self.seq_len = seq_len
-        self.layers = layers
+        self.block2 = nn.Sequential(
+            nn.Conv2d(16, 32, (2,2), stride=(1,1), padding=(3//2, 0)),
+            nn.ReLU,
+            nn.MaxPool2d(2)
 
-        self.initial_layer = nn.Linear(latent_dim, vocab_size * seq_len * num_channels)
-        blocks = []
-        for i in range(layers):
-            blocks.append(
-                self.blocks = nn.Sequential(*blocks)
-                self.conv = nn.Sequential(
-                    nn.Conv2d(num_channels, 1, (3, 1), stride=(1, 1), padding=(3 // 2, 0)), # bottleneck: (batch, width, out_chan)
-                    relu
-                )
-            )
+        self.fc = nn.Linear(vocab_size*seq_len*32, 10)
+        )
 
     def forward(self, inputs):
-        outputs = self.initial_layer(inputs)
-        outputs = torch.reshape(outputs, [-1, self.num_channels, self.vocab_size, self.seq_len])
-        inputs = outputs
-        for i in range(self.layers):
-            outputs = 1.0 * self.blocks[i](inputs) + inputs  # where resnet idea comes into play!
-            inputs = outputs
-        outputs = self.conv(outputs)
-        outputs = torch.reshape(outputs, [-1, self.vocab_size, self.seq_len])
+        outputs = self.block1(inputs)
+        outputs - self.block2(outputs)
+
+        #Flatten the output of block2
+        outputs = outputs.view(outputs.size(0), -1)
+
+        outputs = self.fc(outputs)
         return outputs
