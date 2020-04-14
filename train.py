@@ -71,11 +71,6 @@ print("The number of samples in {} split is {}.\n".format('train', len(basset_da
 basset_dataset_valid = BassetDataset(path='./data/', f5name='sample_dataset.h5', split='valid')
 print("The number of samples in {} split is {}.\n".format('valid', len(basset_dataset_valid)))
 
-# these three lines should be move to 'test.py', they do not belong to the training process!
-basset_dataset_test = BassetDataset(path='./data/', f5name='sample_dataset.h5', split='test')  # we do not need these here, we need then in the 'test.py' (just to let you know)
-print("The number of samples in {} split is {}.".format('test', len(basset_dataset_test)))
-print("The first 10 ids of test samples are:\n  {}\n".format("\n  ".join(basset_dataset_test.ids[:10])))
-
 # using default pytorch DataLoaders
 basset_dataloader_train = DataLoader(basset_dataset_train, batch_size=args.batch_size, drop_last=True, shuffle=True, num_workers=1)
 basset_dataloader_valid = DataLoader(basset_dataset_valid, batch_size=len(basset_dataset_valid), drop_last=False, shuffle=False, num_workers=1)
