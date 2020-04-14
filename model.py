@@ -33,6 +33,11 @@ class ResNet2d(nn.Module):
         outputs = self.prediction_layer(outputs)
         return outputs"""
 
+#note: to check dimensions, do not have to have real data (can be done with any data)
+basset_net = Basset(some_arguments) # __init__ here
+random_sample = np.random.randn(64, 4, 1, 600) # 64 is the batch_size
+basset_net(random_sample) # forward here
+
 class Basset(nn.Module):
     """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
     Parameters:
