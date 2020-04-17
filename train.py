@@ -23,7 +23,9 @@ from pytz import timezone
 from torch.utils.data import DataLoader
 from dataset import BassetDataset
 from model import Basset
+#from model import ResNet1d, ResNet2d, Basset
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tz = timezone('US/Eastern')
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -81,7 +83,14 @@ basset_dataloader_train = DataLoader(basset_dataset_train, batch_size=args.batch
 basset_dataloader_valid = DataLoader(basset_dataset_valid, batch_size=len(basset_dataset_valid), drop_last=False, shuffle=False, num_workers=1)
 
 # basset network instantiation
-basset_net = Basset()
+# network instantiation
+if args.network_type=="basset":
+    classifier = Basset().to(device)
+elif args.network_type=="resnet1d":
+    classifier = ResNet1d().to(device)
+elif args.network_type=="resnet2d":
+    classifier = ResNet2d().to(device)
+
 
 # cost function
 criterion = nn.BCEWithLogitsLoss()

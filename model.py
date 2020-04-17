@@ -60,7 +60,9 @@ class ResNet2d(nn.Module):
         self.prediction_layer = nn.Linear(self.vocab_size*seq_len*num_channels, num_classes)
     def forward(self, inputs):
         inputs = torch.reshape(inputs, [-1, 1, self.vocab_size, self.seq_len])
+        print(inputs.shape)
         outputs = self.conv(inputs)
+        print(outputs.shape)
         inputs = outputs
         for i in range(self.res_layers):
             outputs = 1.0*self.resblocks[i](inputs) + inputs  # where resnet idea comes into play!
@@ -72,15 +74,15 @@ class ResNet2d(nn.Module):
 #note: to check dimensions, do not have to have real data (can be done with any data)
 example_net = ResNet2d() # __init__ here
 random_sample = torch.tensor(np.random.randn(64, 4, 1, 600)).float()
-example_net(random_sample) # forward here
-
+predictions = example_net(random_sample) # forward here
+print(predictions.shape)
 #check input dimensions
-inputs = torch.reshape(random_sample, [-1, 1, len(random_sample), self.seq_len])
-print(inputs.shape) #See how input will look like after passed to the network and processed
+#inputs = torch.reshape(random_sample, [-1, 1, len(random_sample), self.seq_len])
+#print(inputs.shape) #See how input will look like after passed to the network and processed
 
 #check output dimensions
-outputs = self.conv(inputs)
-print(outputs.shape) #Check the output shape of each layer
+#outputs = self.conv(inputs)
+#print(outputs.shape) #Check the output shape of each layer
 """inputs = outputs
         for i in range(self.res_layers):
             outputs = 1.0*self.resblocks[i](inputs) + inputs  # where resnet idea comes into play!
@@ -93,33 +95,37 @@ print(outputs.shape) #Check the output shape of each layer
 
 
 class Basset(nn.Module):
-    """ Basset network to learn models of DNA sequence activity such as accessibility, protein binding, and chromatin state.
-    Parameters:
-        inputs (tensor): Batch of one-hot-encoded sequences.
-	other_arguments: Should be explained later.
-    Returns:
-        outputs (tensor): Should be explained later.
-    """
-    def __init__(self, other_arguments=None):
+    def __init__(self):
         super(Basset, self).__init__()
-        self.block1 = nn.Sequential(
-            nn.Conv2d(64, 100, kernel_size=5, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.block2 = nn.Sequential(
-            nn.Conv2d(100, 84, kernel_size=5, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-
-        self.fc = nn.Linear(7*7*32, 10)
-
-    def forward(self, inputs):
-        out = self.block1(inputs)
-        out = self.block2(out)
-
-        # Flatten the output of block2
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-
-        return out
+        self.dropout = 0.3
+        self.num_cell_types = 164
+        self.conv1 = nn.Conv2d(4, 300, (19, 1), stride = (1, 1), padding=(9,0))
+        self.conv2 = nn.Conv2d(300, 200, (11, 1), stride = (1, 1), padding = (5,0))
+        self.conv3 = nn.Conv2d(200, 200, (7, 1), stride = (1, 1), padding = (4,0))
+        self.bn1 = nn.BatchNorm2d(300)
+        self.bn2 = nn.BatchNorm2d(200)
+        self.bn3 = nn.BatchNorm2d(200)
+        self.maxpool1 = nn.MaxPool2d((3, 1))
+        self.maxpool2 = nn.MaxPool2d((4, 1))
+        self.maxpool3 = nn.MaxPool2d((4, 1))
+        self.fc1 = nn.Linear(13*200, 1000)
+        self.bn4 = nn.BatchNorm1d(1000)
+        self.fc2 = nn.Linear(1000, 1000)
+        self.bn5 = nn.BatchNorm1d(1000)
+        self.fc3 = nn.Linear(1000, self.num_cell_types)
+    def forward(self, s):
+        inputs = torch.reshape(inputs, [-1, 1, self.vocab_size, self.seq_len])
+        print(inputs.shape)
+        outputs = self.conv(inputs)
+        print(outputs.shape)
+        #s = s.permute(0, 2, 1).contiguous()                          # batch_size x 4 x 600
+        s = s.view(-1, 4, 600, 1)                                   # batch_size x 4 x 600 x 1 [4 channels]
+        s = self.maxpool1(F.relu(self.bn1(self.conv1(s))))           # batch_size x 300 x 200 x 1
+        s = self.maxpool2(F.relu(self.bn2(self.conv2(s))))           # batch_size x 200 x 50 x 1
+        s = self.maxpool3(F.relu(self.bn3(self.conv3(s))))           # batch_size x 200 x 13 x 1
+        s = s.view(-1, 13*200)
+        conv_out = s
+        s = F.dropout(F.relu(self.bn4(self.fc1(s))), p=self.dropout, training=self.training)  # batch_size x 1000
+        s = F.dropout(F.relu(self.bn5(self.fc2(s))), p=self.dropout, training=self.training)  # batch_size x 1000
+        s = self.fc3(s)
+        return s
