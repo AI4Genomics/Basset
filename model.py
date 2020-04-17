@@ -6,13 +6,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
-#note: to check dimensions, do not have to have real data (can be done with any data)
-basset_net = Basset(some_arguments) # __init__ here
-random_sample = np.random.randn(64, 4, 1, 600) # 64 is the batch_size
-basset_net(random_sample) # forward here
-
-
 class resblock_2d(nn.Module):
     """Class to return a block of 2D Resudual Networks
     Parameters:
@@ -76,16 +69,19 @@ class ResNet2d(nn.Module):
         outputs = self.prediction_layer(outputs)
         return outputs
 
-
+#note: to check dimensions, do not have to have real data (can be done with any data)
+example_net = ResNet2d() # __init__ here
+random_sample = torch.tensor(np.random.randn(64, 4, 1, 600)).float()
+example_net(random_sample) # forward here
 
 #check input dimensions
-inputs = torch.reshape(inputs, [-1, 1, len(random_sample), self.seq_len])
+inputs = torch.reshape(random_sample, [-1, 1, len(random_sample), self.seq_len])
 print(inputs.shape) #See how input will look like after passed to the network and processed
 
 #check output dimensions
 outputs = self.conv(inputs)
 print(outputs.shape) #Check the output shape of each layer
-        """inputs = outputs
+"""inputs = outputs
         for i in range(self.res_layers):
             outputs = 1.0*self.resblocks[i](inputs) + inputs  # where resnet idea comes into play!
             inputs = outputs
