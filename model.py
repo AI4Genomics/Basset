@@ -5,6 +5,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class resblock_2d(nn.Module):
     """Class to return a block of 2D Resudual Networks
@@ -32,6 +33,7 @@ class resblock_2d(nn.Module):
     def forward(self, inputs):
         outputs = self.block(inputs)
         return outputs
+
 class ResNet2d(nn.Module):
     """ Resudual Network with 2D convolutions for discriminating real vs generated sequences.
     Parameters:
@@ -76,13 +78,7 @@ example_net = ResNet2d() # __init__ here
 random_sample = torch.tensor(np.random.randn(64, 4, 1, 600)).float()
 predictions = example_net(random_sample) # forward here
 print(predictions.shape)
-#check input dimensions
-#inputs = torch.reshape(random_sample, [-1, 1, len(random_sample), self.seq_len])
-#print(inputs.shape) #See how input will look like after passed to the network and processed
 
-#check output dimensions
-#outputs = self.conv(inputs)
-#print(outputs.shape) #Check the output shape of each layer
 """inputs = outputs
         for i in range(self.res_layers):
             outputs = 1.0*self.resblocks[i](inputs) + inputs  # where resnet idea comes into play!
@@ -90,9 +86,6 @@ print(predictions.shape)
         outputs = torch.reshape(outputs, [-1, self.vocab_size*self.seq_len*self.num_channels])
         outputs = self.prediction_layer(outputs)
         return outputs"""
-
-
-
 
 class Basset(nn.Module):
     def __init__(self):
@@ -113,19 +106,31 @@ class Basset(nn.Module):
         self.fc2 = nn.Linear(1000, 1000)
         self.bn5 = nn.BatchNorm1d(1000)
         self.fc3 = nn.Linear(1000, self.num_cell_types)
+
     def forward(self, s):
-        inputs = torch.reshape(inputs, [-1, 1, self.vocab_size, self.seq_len])
-        print(inputs.shape)
-        outputs = self.conv(inputs)
-        print(outputs.shape)
-        #s = s.permute(0, 2, 1).contiguous()                          # batch_size x 4 x 600
-        s = s.view(-1, 4, 600, 1)                                   # batch_size x 4 x 600 x 1 [4 channels]
-        s = self.maxpool1(F.relu(self.bn1(self.conv1(s))))           # batch_size x 300 x 200 x 1
+        # s = s.permute(0, 2, 1).contiguous()                          # batch_size x 4 x 600
+        s = s.view(-1, 4, 600, 1)                                      # batch_size x 4 x 600 x 1 [4 channels]
+        print("input dimension(?):", s.shape)
+        s = self.conv1(s)
+        print("first conv layer size:", s.shape)
+        s = self.bn1(s)
+        print("first batch norm size:", s.shape)
+        s = F.relu(s)
+        print("first activation fnc:", s.shape)
+        s = self.maxpool1(s)                                         # batch_size x 300 x 200 x 1
+        print("first maxpool size:", s.shape)
         s = self.maxpool2(F.relu(self.bn2(self.conv2(s))))           # batch_size x 200 x 50 x 1
+        print("second conv block dimensions:", s.shape)
         s = self.maxpool3(F.relu(self.bn3(self.conv3(s))))           # batch_size x 200 x 13 x 1
+        print("third conv block dimensions:", s.shape)
         s = s.view(-1, 13*200)
         conv_out = s
         s = F.dropout(F.relu(self.bn4(self.fc1(s))), p=self.dropout, training=self.training)  # batch_size x 1000
         s = F.dropout(F.relu(self.bn5(self.fc2(s))), p=self.dropout, training=self.training)  # batch_size x 1000
         s = self.fc3(s)
         return s
+
+example_net_basset = Basset() # __init__ here
+random_sample = torch.tensor(np.random.randn(64, 4, 1, 600)).float()
+predictions = example_net_basset(random_sample) # forward here
+print(predictions.shape)
