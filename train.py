@@ -18,20 +18,23 @@ import pprint
 import requests
 import logomaker # https://github.com/jbkinney/logomaker/tree/master/logomaker/tutorials (should be moved to the util.py)
 import argparse
-from util import cal_iter_time
+from util import cal_iter_time, hamming_score
 from pytz import timezone
 from torch.utils.data import DataLoader
 from dataset import BassetDataset
-from model import Basset
+from model import ResNet1d, ResNet2d, Basset
+from sklearn.metrics import accuracy_score
+from tqdm import tqdm
 
 tz = timezone('US/Eastern')
 pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', type=str, default='./data', help="Path to the dataset directory (default: './data')")
-parser.add_argument('--file_name', type=str, default='sample_dataset.h5', help='Name of the h5 file already preprocessed in the preprocessing step (default: sample_dataset.h5)')
+parser.add_argument('--dataset_dir', type=str, default='./data', help="Path to the dataset directory (default: './data')")
+parser.add_argument('--file_name', type=str, default='sample_dataset.h5', help='Name of the h5 dataset file already preprocessed in the preprocessing step (default: sample_dataset.h5)')
 parser.add_argument('--log_dir', default='log/', help='Base log folder (create if it does not exist')
 parser.add_argument('--log_name', default='basset_train', help='name to use when logging this model')
+parser.add_argument('--network_type', default='resnet1d', help="Which type of model architecture to use ('basset', 'resnet1d', 'resnet2d', etc)")
 parser.add_argument('--batch_size', type=int, default=64, help='Defines the batch size for training phase (default: 64)')
 parser.add_argument('--nb_epochs', type=int, default=200, help='Defines the maximum number of epochs the network needs to train (default: 200)')
 parser.add_argument('--optimizer', type=str, default='adam', help="The algorithm used for the optimization of the model (default: 'adam')")
@@ -40,6 +43,24 @@ parser.add_argument('--learning_rate', type=float, default=0.004, help='Learning
 parser.add_argument('--beta1', type=float, default=0.5, help="'beta1' for the optimizer")
 parser.add_argument('--seed', type=int, default=313, help='Seed for reproducibility')
 args = parser.parse_args()
+
+# some assertions
+assert args.network_type in ['basset', 'resnet1d', 'resnet2d'], "The input '{}' as the network type is not implemented!".format(args.network_type)
+
+
+# sets device for model and PyTorch tensors
+#os.environ["CUDA_VISIBLE_DEVICES"]="0"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# set RNG
+seed = args.seed
+torch.backends.cudnn.deterministic = True
+torch.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
+if device.type=='cuda':
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 # save args in the log folder
 
@@ -65,62 +86,74 @@ if device.type=='cuda':
 # create 'log_dir' folder (if it does not exist already)
 os.makedirs(args.log_dir, exist_ok=True)
 
-basset_dataset_train = BassetDataset(path='./data/', f5name='sample_dataset.h5', split='train')
-print("The number of samples in {} split is {}.\n".format('train', len(basset_dataset_train)))
-
-basset_dataset_valid = BassetDataset(path='./data/', f5name='sample_dataset.h5', split='valid')
-print("The number of samples in {} split is {}.\n".format('valid', len(basset_dataset_valid)))
+# building the dataloaders needed
+basset_dataset_train = BassetDataset(path=args.dataset_dir, f5name=args.file_name, split='train')
+basset_dataset_valid = BassetDataset(path=args.dataset_dir, f5name=args.file_name, split='valid')
 
 # using default pytorch DataLoaders
-basset_dataloader_train = DataLoader(basset_dataset_train, batch_size=args.batch_size, drop_last=True, shuffle=True, num_workers=1)
-basset_dataloader_valid = DataLoader(basset_dataset_valid, batch_size=len(basset_dataset_valid), drop_last=False, shuffle=False, num_workers=1)
+basset_dataloader_train = DataLoader(basset_dataset_train, batch_size=args.batch_size, drop_last=True, shuffle=True, num_workers=8)
+basset_dataloader_valid = DataLoader(basset_dataset_valid, batch_size=args.batch_size, drop_last=False, shuffle=False, num_workers=8)
 
 # basset network instantiation
-basset_net = Basset()
+if args.network_type=="basset":
+    classifier = Basset().to(device)
+elif args.network_type=="resnet1d":
+    classifier = ResNet1d().to(device)
+elif args.network_type=="resnet2d":
+    classifier = ResNet2d().to(device)
 
 # cost function
 criterion = nn.BCEWithLogitsLoss()
 
 # setup optimizer & scheduler
-"""if args.optimizer=='adam':
-    optimizer = optim.Adam(list(basset_net.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
+if args.optimizer=='adam':
+    optimizer = optim.Adam(list(classifier.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
 elif args.optimizaer=='rmsprop':
-    optimizaer = optim.RMSprop(list(basset_net.parameters()), lr=args.learning_rate)
-scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)  # use an exponentially decaying learning rate """ 
+    optimizer = optim.RMSprop(list(classifier.parameters()), lr=args.learning_rate)
+scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)  # use an exponentially decaying learning rate
 
 # keeping track of the time
 start_time = datetime.datetime.now(tz)
 former_iteration_endpoint = start_time
 print("~~~~~~~~~~~~~ TIME ~~~~~~~~~~~~~~")
 print("Time started: {}".format(start_time.strftime("%Y-%m-%d %H:%M:%S")))
-print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 # main training loop
 for n_epoch in range(args.nb_epochs):
-    # training
-    print("TRAINING (EPOCH {}):".format(n_epoch+1))
-    print("=======================")
-    for n_batch, batch_samples in enumerate(basset_dataloader_train):
+    t = tqdm(basset_dataloader_train, ncols=160, desc="Epoch {}/{}".format(n_epoch+1, args.nb_epochs))
+    for n_batch, batch_samples in enumerate(t):
+        optimizer.zero_grad()
+        #if 10 < n_batch: break
         seqs, trgs = batch_samples[0], batch_samples[1]
-        print("Shape of the batch for training input (batch_{}/epoch_{}): {}".format(n_batch+1, n_epoch+1, seqs.shape))
-        print("Shape of the batch for training output (batch_{}/epoch_{}): {}\n".format(n_batch+1, n_epoch+1, trgs.shape))
-        ### IMPORTANT: here, seqs whold be fed to the BassetNet (imported above) and output of it would be compare against trgs for network optimization
-        # predictions = basset_net(seqs)
-        # err = compare(predictions vs. trgs)
-        # err.backwards
-        # basset_network.step()
+        predictions = classifier(seqs.reshape(args.batch_size, 4, 600).float().to(device))
+        loss = criterion(predictions, trgs.float().to(device))
+        loss.backward()
+        optimizer.step()
+        acc = hamming_score(trgs.float() > 0.5, torch.sigmoid(predictions).detach().cpu().numpy() > 0.5, normalize=True, sample_weight=None)
+        t.set_postfix(train_loss="{:.3f}".format(loss.item()), train_accuracy="{:.2f}%".format(acc*100))
     
-    # validation
-    if args.validate:
-        print("VALIDATION:")
-        print("------------------")
-        seqs, trgs = next(iter(basset_dataloader_valid))
-        print("Shape of the input for the validation data (epoch_{}): {}".format(n_epoch+1, seqs.shape))
-        print("Shape of the output for the validation data (epoch_{}): {}\n".format(n_epoch+1, trgs.shape))
-        ### IMPORTANT: here, we look at the results to see what hype-parameters are working well, to keep them
-        # report = compare(predictions vs. trgs)
-    
+        # validation
+        if n_batch==len(basset_dataloader_train)-1 and args.validate:
+            preds = np.empty((0, 164))
+            targets = np.empty((0, 164))
+            valid_loss = []
+            for n_batch, batch_samples in enumerate(basset_dataloader_valid):
+                seqs, trgs = batch_samples[0], batch_samples[1]
+                predictions = classifier.eval()(seqs.reshape(seqs.shape[0], 4, 600).float().to(device))
+                valid_loss.append(criterion(predictions, trgs.float().to(device)).item())
+                preds = np.concatenate((preds, torch.sigmoid(predictions).detach().cpu().numpy()), axis=0)
+                targets = np.concatenate((targets, trgs), axis=0)
+            #predictions = np.argmax(preds > 0.5, axis=1)
+            #trgs = np.argmax((targets > 0.5), axis=1)
+            #print("targets", (targets > 0.5)[0]*1)
+            #print("preds", (preds > 0.5)[0]*1)
+            acc = hamming_score(targets > 0.5, preds > 0.5, normalize=True, sample_weight=None)
+            t.set_postfix(valid_loss="{:.3f}".format(np.sum(valid_loss)), valid_accuracy="{:.2f}%".format(acc*100))
+            #t.set_postfix(valid_accuracy="{}".format(acc))
+            
     # show/save stats of the results in the log folder
     # checkpoint the basset_net in the log folder
-    former_iteration_endpoint = cal_iter_time(former_iteration_endpoint, tz)
+    # former_iteration_endpoint = cal_iter_time(former_iteration_endpoint, tz)
+    scheduler.step()
 
