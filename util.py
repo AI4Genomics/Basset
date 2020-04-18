@@ -17,7 +17,8 @@ def dna_to_onehot(seq_nts):
     nt_dict = {'A': [1, 0, 0, 0],
                'C': [0, 1, 0, 0],
                'G': [0, 0, 1, 0],
-               'T': [0, 0, 0, 1]
+               'T': [0, 0, 0, 1],
+               'N': [0, 0, 0, 0]
               }
     return np.asarray([nt_dict[nt.upper()] for nt in seq_nts]).transpose() # transpose to have nb_cols=nb_nts
 
