@@ -6,9 +6,10 @@ def cal_iter_time(former_iteration_endpoint, tz):
     """Calculating 'Computation Time' for this round of iteration"""
     current_time = datetime.datetime.now(tz)
     time_elapsed = current_time - former_iteration_endpoint
+    time_elapsed = str(time_elapsed).split(".")[0]
     #print(" ~~  Time current: {}".format(current_time.strftime("%Y-%m-%d %H:%M:%S")))
-    print("~~~ Time elapsed for this epoch: {} ~~~\n\n".format(str(time_elapsed).split(".")[0]))
-    return current_time
+    #print("~~~ Time elapsed for this epoch: {} ~~~\n\n".format(str(time_elapsed).split(".")[0]))
+    return current_time, time_elapsed
 
 
 #TODO: make sure mapping is the same order used in the preprocessing steps
@@ -17,8 +18,7 @@ def dna_to_onehot(seq_nts):
     nt_dict = {'A': [1, 0, 0, 0],
                'C': [0, 1, 0, 0],
                'G': [0, 0, 1, 0],
-               'T': [0, 0, 0, 1],
-               'N': [0, 0, 0, 0]
+               'T': [0, 0, 0, 1]
               }
     return np.asarray([nt_dict[nt.upper()] for nt in seq_nts]).transpose() # transpose to have nb_cols=nb_nts
 

@@ -4,7 +4,6 @@
 # project. You are free to use and extend these projects for educational purposes.# project. You are free to use and extend these projects for educational purposes.
 
 import os
-from os import path
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,8 +14,6 @@ import datetime
 import random
 import re
 import pprint
-import requests
-import logomaker # https://github.com/jbkinney/logomaker/tree/master/logomaker/tutorials (should be moved to the util.py)
 import argparse
 from util import cal_iter_time, hamming_score
 from pytz import timezone
@@ -24,7 +21,6 @@ from torch.utils.data import DataLoader
 from dataset import BassetDataset
 from model import ResNet1d, ResNet2d, Basset
 from sklearn.metrics import accuracy_score
-from tqdm import tqdm
 
 tz = timezone('US/Eastern')
 pp = pprint.PrettyPrinter(indent=4)
@@ -36,11 +32,10 @@ parser.add_argument('--log_dir', default='log/', help='Base log folder (create i
 parser.add_argument('--log_name', default='basset_train', help='name to use when logging this model')
 parser.add_argument('--network_type', default='resnet1d', help="Which type of model architecture to use ('basset', 'resnet1d', 'resnet2d', etc)")
 parser.add_argument('--batch_size', type=int, default=64, help='Defines the batch size for training phase (default: 64)')
-parser.add_argument('--nb_epochs', type=int, default=200, help='Defines the maximum number of epochs the network needs to train (default: 200)')
+parser.add_argument('--nb_epochs', type=int, default=2000, help='Defines the maximum number of epochs the network needs to train (default: 200)')
 parser.add_argument('--optimizer', type=str, default='adam', help="The algorithm used for the optimization of the model (default: 'adam')")
-parser.add_argument('--validate', type=bool, default=True, help='Whether to use validation set')
-parser.add_argument('--learning_rate', type=float, default=0.004, help='Learning rate for the optimizer (default: 0.004)')
-parser.add_argument('--beta1', type=float, default=0.5, help="'beta1' for the optimizer")
+parser.add_argument('--learning_rate', type=float, default=0.002, help='Learning rate for the optimizer (default: 0.004)')
+parser.add_argument('--beta1', type=float, default=0.9, help="'beta1' for the optimizer")
 parser.add_argument('--seed', type=int, default=313, help='Seed for reproducibility')
 args = parser.parse_args()
 
@@ -108,7 +103,7 @@ criterion = nn.BCEWithLogitsLoss()
 # setup optimizer & scheduler
 if args.optimizer=='adam':
     optimizer = optim.Adam(list(classifier.parameters()), lr=args.learning_rate, betas=(args.beta1, 0.999))
-elif args.optimizaer=='rmsprop':
+elif args.optimizer=='rmsprop':
     optimizer = optim.RMSprop(list(classifier.parameters()), lr=args.learning_rate)
 scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)  # use an exponentially decaying learning rate
 
@@ -121,39 +116,45 @@ print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 # main training loop
 for n_epoch in range(args.nb_epochs):
-    t = tqdm(basset_dataloader_train, ncols=160, desc="Epoch {}/{}".format(n_epoch+1, args.nb_epochs))
-    for n_batch, batch_samples in enumerate(t):
+    # training data
+    #train_preds = np.empty((0, 164))
+    #train_targets = np.empty((0, 164))
+    #train_loss = []
+    for n_batch, batch_samples in enumerate(basset_dataloader_train):
+
         optimizer.zero_grad()
-        #if 10 < n_batch: break
         seqs, trgs = batch_samples[0], batch_samples[1]
-        predictions = classifier(seqs.reshape(args.batch_size, 4, 600).float().to(device))
+        predictions = classifier(seqs.reshape(seqs.shape[0], 4, 600).float().to(device))
         loss = criterion(predictions, trgs.float().to(device))
         loss.backward()
         optimizer.step()
-        acc = hamming_score(trgs.float() > 0.5, torch.sigmoid(predictions).detach().cpu().numpy() > 0.5, normalize=True, sample_weight=None)
-        t.set_postfix(train_loss="{:.3f}".format(loss.item()), train_accuracy="{:.2f}%".format(acc*100))
+
+        #train_loss.append(criterion(predictions, trgs.float().to(device)).item())
+        #train_preds = np.concatenate((train_preds, torch.sigmoid(predictions).detach().cpu().numpy()), axis=0)
+        #train_targets = np.concatenate((train_targets, trgs), axis=0)
     
-        # validation
-        if n_batch==len(basset_dataloader_train)-1 and args.validate:
-            preds = np.empty((0, 164))
-            targets = np.empty((0, 164))
-            valid_loss = []
-            for n_batch, batch_samples in enumerate(basset_dataloader_valid):
-                seqs, trgs = batch_samples[0], batch_samples[1]
-                predictions = classifier.eval()(seqs.reshape(seqs.shape[0], 4, 600).float().to(device))
-                valid_loss.append(criterion(predictions, trgs.float().to(device)).item())
-                preds = np.concatenate((preds, torch.sigmoid(predictions).detach().cpu().numpy()), axis=0)
-                targets = np.concatenate((targets, trgs), axis=0)
-            #predictions = np.argmax(preds > 0.5, axis=1)
-            #trgs = np.argmax((targets > 0.5), axis=1)
-            #print("targets", (targets > 0.5)[0]*1)
-            #print("preds", (preds > 0.5)[0]*1)
-            acc = hamming_score(targets > 0.5, preds > 0.5, normalize=True, sample_weight=None)
-            t.set_postfix(valid_loss="{:.3f}".format(np.sum(valid_loss)), valid_accuracy="{:.2f}%".format(acc*100))
-            #t.set_postfix(valid_accuracy="{}".format(acc))
+    # validation data
+    valid_preds = np.empty((0, 164))
+    valid_targets = np.empty((0, 164))
+    valid_loss = []
+    for n_batch, batch_samples in enumerate(basset_dataloader_valid):
+
+        seqs, trgs = batch_samples[0], batch_samples[1]
+        predictions = classifier.eval()(seqs.reshape(seqs.shape[0], 4, 600).float().to(device))
+
+        valid_loss.append(criterion(predictions, trgs.float().to(device)).item())
+        valid_preds = np.concatenate((valid_preds, torch.sigmoid(predictions).detach().cpu().numpy()), axis=0)
+        valid_targets = np.concatenate((valid_targets, trgs), axis=0)
+
+    former_iteration_endpoint, time_elapsed = cal_iter_time(former_iteration_endpoint, tz)
+    #train_acc = hamming_score(train_targets > 0.5, train_preds > 0.5, normalize=True, sample_weight=None)
+    valid_acc = hamming_score(valid_targets > 0.5, valid_preds > 0.5, normalize=True, sample_weight=None)
+    print("Epoch {}/{}: valid_loss={:.3f}, valid_accuracy={:.2f}% ({} hh:mm:ss)".format(
+        n_epoch+1, args.nb_epochs, np.sum(valid_loss), valid_acc*100, time_elapsed))
+    #print("Epoch {}/{}: train_loss={:.3f}, train_accuracy={:.2f}%, valid_loss={:.3f}, valid_accuracy={:.2f}% ({} hh:mm:ss)".format(
+    #    n_epoch+1, args.nb_epochs, np.sum(train_loss), train_acc*100, np.sum(valid_loss), valid_acc*100, time_elapsed))
             
     # show/save stats of the results in the log folder
     # checkpoint the basset_net in the log folder
-    # former_iteration_endpoint = cal_iter_time(former_iteration_endpoint, tz)
     scheduler.step()
 
