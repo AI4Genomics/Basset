@@ -13,4 +13,4 @@ Based on the paper and the original implementation in lua language ([GitHub page
 
 <br/>
 
-_**This project is currently undergoing completion.**_
+_**This project is currently undergoing completion**_
